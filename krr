@@ -1,0 +1,165 @@
+from sklearn.kernel_ridge import KernelRidge
+import numpy as np
+from sklearn.metrics import mean_squared_error , r2_score
+from sklearn.linear_model import Ridge
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score,StratifiedKFold
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV,cross_val_score ,StratifiedKFold
+from sklearn.decomposition import PCA
+from sklearn.svm import SVR
+import joblib
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import ConstantKernel, RBF,Matern
+
+
+#查看训练集训练效果，测试alpha
+def krr():
+    krr = KernelRidge()
+    #交叉验证
+    param={'alpha':[0.0000001]}
+    krr_cv=GridSearchCV(krr,param_grid=param,cv=20)
+
+    krr_cv.fit(x_train, y_train)
+    joblib.dump(krr_cv,'krr_1-new.pkl')
+    #y_pre_train=krr.predict(x_train)
+    y_pre=krr_cv.predict(x_test)
+    y_train_pre = krr_cv.predict(x_train)
+    #plt.scatter(y_train_pre,y_train)
+    #for i,j in zip(y_train_pre,y_train):
+        #print(i[0],j[0])
+    plt.scatter(y_pre,y_test)
+
+    #for i,j in zip(y_test,y_pre):
+     #   print(float(i),float(j))
+    #plt.show()
+    #plt.scatter(y_pre_train,y_train)
+    x=[-11,-9.5]
+    y=[-11,-9.5]
+    plt.plot(x,y)
+    #plt.xlim(-3,8)
+    #plt.ylim(-3,8)
+    error=mean_squared_error(y_test,y_pre)
+    #error = mean_squared_error(y_train_pre,y_train)
+    print('RMSE：',error**0.5)
+    r2=r2_score(y_test,y_pre)
+    #r2 = r2_score(y_train_pre,y_train)
+    print('R2:',r2)
+    plt.show()
+
+def gpr():
+
+    kernel = ConstantKernel(0.1, (0.001,0.1))*RBF(0.5,(1e-4,10))
+    gpr = GaussianProcessRegressor(kernel=kernel,n_restarts_optimizer=10,alpha=0.0001)
+
+    gpr.fit(x_train, y_train)
+    joblib.dump(gpr,'gpr.pkl')
+    y_pre,sigma=gpr.predict(x_test,return_std=True)
+
+    plt.scatter(y_pre,y_test)
+    #plt.show()
+    #plt.scatter(y_pre_train,y_train)
+    x=[-11,-9.5]
+    y=[-11,-9.5]
+    plt.plot(x,y)
+    plt.xlabel('gpr')
+
+
+    error=mean_squared_error(y_test,y_pre)
+    print('RMSE：',error**0.5)
+    r2=r2_score(y_test,y_pre)
+    print('R2:',r2)
+    plt.show()
+
+
+
+
+
+def pca(data,i):
+    trans = PCA(n_components=i)
+    #trans.fit(data)
+    data_pca = trans.fit_transform(data)
+    joblib.dump(trans,'pca.pkl')
+    return data_pca
+
+def svr():
+    #svr = SVR(kernel='linear',tol = 0.001,C=0.01)
+    #交叉验证
+    param={'kernel':['linear'],'tol':[0.001],'C':[1]}
+    svr=GridSearchCV(SVR(),param_grid=param,cv=5)
+    svr.fit(x_train, y_train.ravel())
+    joblib.dump(svr, 'svr.pkl')
+    #y_pre_train=krr.predict(x_train)
+    y_pre=svr.predict(x_test)
+    plt.scatter(y_pre,y_test)
+    #plt.show()
+    #plt.scatter(y_pre_train,y_train)
+
+    error=mean_squared_error(y_test,y_pre)
+    print('RMSE：',error**0.5)
+    r2=r2_score(y_test,y_pre)
+    print('R2:',r2)
+    score=svr.score(x_test,y_test)
+    print('score:',score)
+    print('best_param:',svr.best_params_)
+    print('best_estimator:',svr.best_estimator_)
+
+
+    plt.show()
+
+
+
+
+if __name__=='__main__':
+    m = [
+    ]
+    with open('HfCN-125', 'r') as to:#HfCN-125 ML-ACC-HfC
+        lines = to.readlines()
+        for i in lines:
+            k = i.split(' ')
+            float_k = np.array(list(map(float, k)))
+            m.append(float_k)
+    data = []
+    target = []
+
+    for i in m:
+        a = i[0:-1]
+        data.append(a)
+        b = [i[-1]]
+        target.append(b)
+
+    data = np.array(data)
+    target = np.array(target)
+
+
+
+    # 标准化
+    std = StandardScaler()
+    std.fit(data)
+    #data_pca = pca(data,80)
+    #data_pca=std.fit_transform(data_pca)
+    #std.fit(data_pca)
+
+    #print(data_pca)
+    #print(target)
+    #for i in range(25):
+        #print(i)
+    x_train, x_test, y_train, y_test = train_test_split(data, target, test_size=0.2, random_state=3191)
+    joblib.dump(std, 'std.pkl')
+        #x_train = std.transform(x_train)
+        #x_test = std.transform(x_test)
+        #data = std.transform(data)
+    #gpr()
+
+
+    #std.fit(target)
+    #y_test = std.transform(y_test)
+    #y_train = std.transform(y_train)
+
+    krr()
+    #svr()
+    #gpr()
+
+
+
