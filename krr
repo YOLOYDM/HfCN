@@ -18,7 +18,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel, RBF,Matern
 def krr():
     krr = KernelRidge()
     #交叉验证
-    param={'alpha':[0.0000001]}
+    param={'alpha':[0.0001]}
     krr_cv=GridSearchCV(krr,param_grid=param,cv=20)
 
     krr_cv.fit(x_train, y_train)
